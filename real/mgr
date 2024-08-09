@@ -1,0 +1,137 @@
+#!/bin/bash
+# Copyright (c) 2024 Discover Financial Services
+
+set -e
+
+#
+# Use this script to train tesseract.
+#
+SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+
+TRAIN_DIR="${TRAIN_DIR:-$HOME/.fin-ocr/train}"
+TESSTRAIN_DIR=${TRAIN_DIR}/tesstrain
+TESSTRAIN_DATA_DIR=${TESSTRAIN_DIR}/data
+TESSTRAIN_FONT_DIR=${TESSTRAIN_DATA_DIR}/${OCR_FONT}
+LANGDATA_DIR=${TESSTRAIN_DATA_DIR}/langdata
+GROUND_TRUTH_DIR=${TESSTRAIN_DATA_DIR}/${OCR_FONT}-ground-truth
+GROUND_TRUTH_COUNT_FILE=${GROUND_TRUTH_DIR}/count
+REF_IMAGE_FILE=${CLI_DIR}/data/micr_ref.tif
+REF_GT_FILE=${CLI_DIR}/data/micr_ref.gt.txt
+TD_FILE=${OCR_FONT}.traineddata
+TD_PATH=${TRAIN_DIR}/${TD_FILE}
+LOG_FILE=${TRAIN_DIR}/train.log
+
+export CHECKS_DIR="${TRAIN_DIR}/checks}"
+export OCR_FONT="${OCR_FONT:=micr_e13b}"
+export OCR_LOG_LEVEL="${OCR_LOG_LEVEL:=info}"
+export PSM="${PSM:=13}"
+
+function usage() {
+   if [ $# -gt 0 ]; then
+      echo "ERROR: $*"
+   fi
+   echo "Usage: mgr train <start-check-num> <num-checks>"
+   exit 1
+}
+
+function fatal() {
+   echo "FATAL: $*"
+   exit 1
+}
+
+function main() {
+   if [ $# -eq 0 ]; then
+      usage
+   fi
+   CMD=$1
+   shift
+   if [ "$CMD" = "train" ]; then
+      train $* 
+   else
+      usage "Invalid command: $CMD"
+   fi
+}
+
+function train {
+    if [ $# -ne 2 ]; then
+        usage "Invalid number of arguments for the 'train' command"
+    fi
+    START=$1
+    COUNT=$2
+    command -v ocr >/dev/null 2>&1 || { echo >&2 "The 'ocr' command must be installed first.  See https://github.com/discoverfinancial/fin-ocr-cli"; exit 1; }
+    mkdir -p $TRAIN_DIR
+    cd $TRAIN_DIR
+    runTrain "$START:$COUNT" 2>&1 | tee ${LOG_FILE}
+    #
+    # save the trained data by date
+    #
+    RESULTS_DIR=$TRAIN_DIR/results/`date "+%Y-%m-%d"`
+    mkdir -p $RESULTS_DIR
+    cp $TESSTRAIN_DATA_DIR/$TD_FILE $RESULTS_DIR/$TD_FILE
+    mv train.log $RESULTS_DIR
+    echo "Stored traineddata at $RESULTS_DIR/$TD_FILE"
+    echo "Stored logs at $RESULTS_DIR/train.log"
+}
+
+function runTrain {
+    if [ $# -ne 1 ]; then
+        usage "Invalid number of arguments for the 'runTrain' command"
+    fi
+    SC=$1
+    #
+    # Clone the tesstrain repo locally
+    #
+    if [ ! -d $TESSTRAIN_DIR ]; then
+       REPO=https://github.com/tesseract-ocr/tesstrain.git
+       git clone $REPO
+       if [ ! -d $TESSTRAIN_DIR ]; then
+           fatal "Failed to clone $REPO"
+       fi
+    else
+       echo "The tesstrain directory was found at $TESSTRAIN_DIR"
+    fi
+    #
+    # Gen the ground truth if necessary
+    #
+    if [ -f $GROUND_TRUTH_COUNT_FILE ]; then
+       PSC="`cat $GROUND_TRUTH_COUNT_FILE`"
+       if [ "$SC" != "$PSC" ]; then
+          # There was a ground truth count file found, but a different number
+          rm -rf $GROUND_TRUTH_DIR
+       fi
+    else
+       rm -rf $GROUND_TRUTH_DIR
+    fi
+    if [ ! -d $GROUND_TRUTH_DIR ]; then
+        mkdir -p $GROUND_TRUTH_DIR
+        export GROUND_TRUTH_DIR=$GROUND_TRUTH_DIR
+        npx ts-node src/main.ts check scan $SC
+        echo "$SC" > ${GROUND_TRUTH_COUNT_FILE}
+    else
+        echo "Found ground truth at $GROUND_TRUTH_DIR"
+    fi
+    #
+    # Now do tesstrain stuff
+    #
+    cd $TESSTRAIN_DIR
+    #
+    # Download the langdata files as required by tesstrain
+    #
+    if [ ! -d $LANGDATA_DIR ]; then
+        echo "Downloading tesseract-langdata"
+        gmake tesseract-langdata
+    else
+        echo "The langdata directory was found at $LANGDATA_DIR"
+    fi
+    #
+    # Perform training
+    #
+    echo "Begin training from scratch"
+    gmake training MODEL_NAME=${OCR_FONT} PSM=${PSM} EPOCHS=2 TARGET_ERROR_RATE=-1
+    if [ ! -f $TD_PATH ]; then
+       echo "Training failed; file $TD_PATH was not found"
+       exit 1
+    fi
+}
+
+main $*

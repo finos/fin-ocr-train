@@ -1,0 +1,46 @@
+# Copyright (c) 2024 Discover Financial Services
+
+#
+# Configuration parameters:
+# 1) FONT - the name of the font to train
+# 2) EPOCHS - is the number of times to iterate over each image when training
+# 3) TARGET_ERROR_RATE - stops training when the error rate falls below this level
+#    NOTE: Setting TARGET_ERROR_RATE to -1 causes it to ignore the error rate and to only use EPOCHS to determine when to stop.
+# 4) PSM - Page Segmentation Mode 
+#    See https://pyimagesearch.com/2021/11/15/tesseract-page-segmentation-modes-psms-explained-how-to-improve-your-ocr-accuracy/
+#
+
+FONT=micr
+EPOCHS=2
+TARGET_ERROR_RATE=-1
+PSM=13
+
+if [ $# -ne 1 ]; then
+   echo "Usage: train <numImages>"
+   exit 1
+fi
+
+# The number of images to generate and to train over
+NUM_IMAGES=$1
+
+echo "Removing previous training data"
+rm -rf data/${FONT}*
+
+echo "Generating ground truth"
+GT_DIR=./data/${FONT}-ground-truth
+python3 gen_ground_truth.py $NUM_IMAGES $GT_DIR
+
+echo "Removing zero size box files"
+find . -maxdepth 1 -type f -exec sh -c 'if [ ! -s "$1" ]; then BASE=${$1%.*}; rm -f $BASE.*; fi' _ {} \;
+
+echo "Start training"
+gmake training MODEL_NAME=${FONT} PSM=${PSM} EPOCHS=${EPOCHS} TARGET_ERROR_RATE=${TARGET_ERROR_RATE}
+
+TD_FILE=data/${FONT}.traineddata
+
+if [ ! -f $TD_FILE ]; then
+   echo "ERROR: Failed to build training file"
+   exit 1
+fi
+
+echo "Successfully build training file at $TD_FILE"
