@@ -46,5 +46,5 @@ mgr train 1 20000
 This is a very CPU intensive process and can take many hours to run; therefore, you may want to run it in the background using a utility such as the unix `nohup` command.
 
 When processing is complete, the results are stored in a sub-directory of `$HOME/.fin-ocr/train/results`.  The name of the sub-directory is based on the current date.  Two files are stored in that sub-directory: 
-* `micr_e13b.traineddata` - the resulting traineddata file which can now be used by the [CLI](https://github.com/discoverfinancial/fin-ocr-cli) or [REST service](https://github.com/discoverfinancial/fin-ocr-web);
+* `micr_e13b.traineddata` - the resulting traineddata file which can now be used by the [CLI](https://github.com/discoverfinancial/fin-ocr-cli) or [REST service](https://github.com/discoverfinancial/fin-ocr-rest);
 * `train.log` - the logs from the training session.
