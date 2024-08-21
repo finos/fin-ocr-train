@@ -140,11 +140,17 @@ function runTrain {
     #
     # Perform training
     #
-    echo "Begin training from scratch"
-    $MAKE_CMD training MODEL_NAME=${OCR_FONT} PSM=${PSM} EPOCHS=2 TARGET_ERROR_RATE=-1
+    if [[ -z "$START_MODEL" ]]; then
+       echo "Begin training from scratch"
+       $MAKE_CMD training MODEL_NAME=${OCR_FONT} PSM=${PSM} EPOCHS=2 TARGET_ERROR_RATE=-1  
+       
+    elif [[ -n "$START_MODEL" ]]; then
+       echo "Begin training from $START_MODEL"
+       $MAKE_CMD training MODEL_NAME=${OCR_FONT} PSM=${PSM} EPOCHS=2 TARGET_ERROR_RATE=-1  START_MODEL="$START_MODEL"
+    fi
     if [ ! -f $TD_PATH ]; then
-       echo "Training failed; file $TD_PATH was not found"
-       exit 1
+         echo "Training failed; file $TD_PATH was not found"
+         exit 1
     fi
 }
 
