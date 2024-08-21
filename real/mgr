@@ -1,30 +1,40 @@
 #!/bin/bash
 # Copyright (c) 2024 Discover Financial Services
 
-set -e
-
 #
 # Use this script to train tesseract.
 #
-SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+set -e
 
+if command -v gmake >/dev/null 2>&1; then
+    MAKE_CMD="gmake"
+else
+    MAKE_CMD="make"
+fi
+
+export OCR_FONT="${OCR_FONT:=micr_e13b}"
+export OCR_LOG_LEVEL="${OCR_LOG_LEVEL:=info}"
+export PSM="${PSM:=13}"
+
+SCRIPT_DIR="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+# Directory paths
 TRAIN_DIR="${TRAIN_DIR:-$HOME/.fin-ocr/train}"
 TESSTRAIN_DIR=${TRAIN_DIR}/tesstrain
 TESSTRAIN_DATA_DIR=${TESSTRAIN_DIR}/data
 TESSTRAIN_FONT_DIR=${TESSTRAIN_DATA_DIR}/${OCR_FONT}
 LANGDATA_DIR=${TESSTRAIN_DATA_DIR}/langdata
 GROUND_TRUTH_DIR=${TESSTRAIN_DATA_DIR}/${OCR_FONT}-ground-truth
+RESULTS_DIR=$TRAIN_DIR/results/`date "+%Y-%m-%d"`
+# File paths
 GROUND_TRUTH_COUNT_FILE=${GROUND_TRUTH_DIR}/count
-REF_IMAGE_FILE=${CLI_DIR}/data/micr_ref.tif
-REF_GT_FILE=${CLI_DIR}/data/micr_ref.gt.txt
+REF_IMAGE_FILE=${SCRIPT_DIR}/data/micr_ref.tif
+REF_GT_FILE=${SCRIPT_DIR}/data/micr_ref.gt.txt
 TD_FILE=${OCR_FONT}.traineddata
 TD_PATH=${TRAIN_DIR}/${TD_FILE}
 LOG_FILE=${TRAIN_DIR}/train.log
 
-export CHECKS_DIR="${TRAIN_DIR}/checks}"
-export OCR_FONT="${OCR_FONT:=micr_e13b}"
-export OCR_LOG_LEVEL="${OCR_LOG_LEVEL:=info}"
-export PSM="${PSM:=13}"
+# Optional
+START_MODEL="${TRAIN_DIR}/models/micr_e13b.traineddata"
 
 function usage() {
    if [ $# -gt 0 ]; then
@@ -46,7 +56,7 @@ function main() {
    CMD=$1
    shift
    if [ "$CMD" = "train" ]; then
-      train $* 
+      train $*
    else
       usage "Invalid command: $CMD"
    fi
@@ -58,19 +68,20 @@ function train {
     fi
     START=$1
     COUNT=$2
-    command -v ocr >/dev/null 2>&1 || { echo >&2 "The 'ocr' command must be installed first.  See https://github.com/discoverfinancial/fin-ocr-cli"; exit 1; }
+    command -v ocr >/dev/null 2>&1 || { echo >&2 "The 'ocr' command must be installed. See https://github.com/discoverfinancial/fin-ocr-cli?tab=readme-ov-file#installation-steps"; exit 1; }
+
     mkdir -p $TRAIN_DIR
     cd $TRAIN_DIR
     runTrain "$START:$COUNT" 2>&1 | tee ${LOG_FILE}
+    if [ "${PIPESTATUS[0]}" -ne "0" ]; then
+      echo ""
+      echo "The runTrain command failed, see $LOG_FILE for details."
+      exit 2
+    fi
     #
     # save the trained data by date
     #
-    RESULTS_DIR=$TRAIN_DIR/results/`date "+%Y-%m-%d"`
-    mkdir -p $RESULTS_DIR
-    cp $TESSTRAIN_DATA_DIR/$TD_FILE $RESULTS_DIR/$TD_FILE
-    mv train.log $RESULTS_DIR
-    echo "Stored traineddata at $RESULTS_DIR/$TD_FILE"
-    echo "Stored logs at $RESULTS_DIR/train.log"
+    saveTrainedData
 }
 
 function runTrain {
@@ -82,6 +93,7 @@ function runTrain {
     # Clone the tesstrain repo locally
     #
     if [ ! -d $TESSTRAIN_DIR ]; then
+       command -v git >/dev/null 2>&1 || { echo >&2 "The 'git' command must be installed."; exit 1; }
        REPO=https://github.com/tesseract-ocr/tesstrain.git
        git clone $REPO
        if [ ! -d $TESSTRAIN_DIR ]; then
@@ -105,7 +117,9 @@ function runTrain {
     if [ ! -d $GROUND_TRUTH_DIR ]; then
         mkdir -p $GROUND_TRUTH_DIR
         export GROUND_TRUTH_DIR=$GROUND_TRUTH_DIR
-        npx ts-node src/main.ts check scan $SC
+        echo "GROUND_TRUTH_DIR: $GROUND_TRUTH_DIR"
+        echo "ocr being called with: ocr check scan $SC"
+        ocr check scan $SC
         echo "$SC" > ${GROUND_TRUTH_COUNT_FILE}
     else
         echo "Found ground truth at $GROUND_TRUTH_DIR"
@@ -119,7 +133,7 @@ function runTrain {
     #
     if [ ! -d $LANGDATA_DIR ]; then
         echo "Downloading tesseract-langdata"
-        gmake tesseract-langdata
+        $MAKE_CMD tesseract-langdata
     else
         echo "The langdata directory was found at $LANGDATA_DIR"
     fi
@@ -127,11 +141,39 @@ function runTrain {
     # Perform training
     #
     echo "Begin training from scratch"
-    gmake training MODEL_NAME=${OCR_FONT} PSM=${PSM} EPOCHS=2 TARGET_ERROR_RATE=-1
+    $MAKE_CMD training MODEL_NAME=${OCR_FONT} PSM=${PSM} EPOCHS=2 TARGET_ERROR_RATE=-1
     if [ ! -f $TD_PATH ]; then
        echo "Training failed; file $TD_PATH was not found"
        exit 1
     fi
+}
+
+function saveTrainedData {
+    mkdir -p $RESULTS_DIR
+
+    if [ -f $RESULTS_DIR/$TD_FILE ]; then
+        echo "Trained data $TD_FILE already exists in $RESULTS_DIR."
+        read -p "Do you want to overwrite it? (y/n): " yn
+        case $yn in
+            [Yy]* )
+                echo "Overwriting the existing trained data."
+                ;;
+            [Nn]* )
+                version=1
+                while [ -f $RESULTS_DIR/${OCR_FONT}_v${version}.traineddata ]; do
+                    version=$((version+1))
+                done
+                TD_FILE=${OCR_FONT}_v${version}.traineddata
+                echo "Saving trained data as $TD_FILE to avoid conflict."
+                ;;
+            * ) echo "Please answer y or n."; exit 1;;
+        esac
+    fi
+
+    cp $TESSTRAIN_DATA_DIR/$TD_FILE $RESULTS_DIR/$TD_FILE
+    mv train.log $RESULTS_DIR
+    echo "Stored traineddata at $RESULTS_DIR/$TD_FILE"
+    echo "Stored logs at $RESULTS_DIR/train.log"
 }
 
 main $*
