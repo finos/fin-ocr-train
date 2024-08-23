@@ -4,19 +4,19 @@ This guide explains how to train Tesseract OCR for recognizing MICR (Magnetic In
 
 ## Prerequisites
 
-* **Python 3.x** along with the `Pillow` library for image processing.
+* **Python 3.x** along with the `pillow` library for image processing.
 * **Tesseract 5.x** (see [Tesseract installation instructions](https://tesseract-ocr.github.io/tessdoc/Installation.html))
 * **OCR CLI tool** (follow installation instructions from the [fin-ocr-cli repository](https://github.com/discoverfinancial/fin-ocr-cli))
 
 ## Preparing Training Data
 
-You can prepare training data either automatically using X9 files or manually. The OCR CLI plays a crucial role in this process.
+You can prepare training data either automatically using X9 files or manually. 
 
 ### Option 1: Automatic Data Preparation (Using X9 Files)
 
-If you have X9 files, you can use the `x9-extract` tool in combination with the OCR CLI to automate the creation of your training data.
+If you have X9 files, you can use the [`x9-extract`](../x9-extract/README.md) tool to automate the creation of your training data.
 
-1. Use `x9-extract` to extract check images and metadata:
+1. Use [`x9-extract`](../x9-extract/README.md) to extract check images and metadata:
    ```
    FRB_COMPATIBILITY_MODE=true ./x9-extract $HOME/.fin-ocr/checks $HOME/x9-files/train/*
    ```
