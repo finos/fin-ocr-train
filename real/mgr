@@ -34,7 +34,7 @@ TD_PATH=${TRAIN_DIR}/${TD_FILE}
 LOG_FILE=${TRAIN_DIR}/train.log
 
 # Optional
-START_MODEL="${TRAIN_DIR}/models/micr_e13b.traineddata"
+#START_MODEL="${TRAIN_DIR}/models/micr_e13b"
 
 function usage() {
    if [ $# -gt 0 ]; then
@@ -89,6 +89,9 @@ function runTrain {
         usage "Invalid number of arguments for the 'runTrain' command"
     fi
     SC=$1
+
+    START_NUM=$(echo $SC | cut -d':' -f1)
+    END_NUM=$(echo $SC | cut -d':' -f2)
     #
     # Clone the tesstrain repo locally
     #
@@ -105,24 +108,31 @@ function runTrain {
     #
     # Gen the ground truth if necessary
     #
-    if [ -f $GROUND_TRUTH_COUNT_FILE ]; then
-       PSC="`cat $GROUND_TRUTH_COUNT_FILE`"
-       if [ "$SC" != "$PSC" ]; then
-          # There was a ground truth count file found, but a different number
-          rm -rf $GROUND_TRUTH_DIR
-       fi
+    mkdir -p $GROUND_TRUTH_DIR
+    export GROUND_TRUTH_DIR=$GROUND_TRUTH_DIR
+    echo "GROUND_TRUTH_DIR: $GROUND_TRUTH_DIR"
+
+    if [ -f $GROUND_TRUTH_COUNT_FILE ] && [ -n "$(ls -A $GROUND_TRUTH_DIR)" ]; then
+        echo "Existing ground truth data found."
+        read -p "Do you want to overwrite the existing ground truth data? (y/n): " overwrite
+        case $overwrite in
+            [Yy]* )
+                echo "Generating new ground truth data..."
+                rm -rf $GROUND_TRUTH_DIR/*
+                ocr check scan $START_NUM $END_NUM
+                echo "$SC" > ${GROUND_TRUTH_COUNT_FILE}
+                ;;
+            [Nn]* )
+                echo "Using existing ground truth data."
+                ;;
+            * )
+                echo "Invalid input. Using existing ground truth data."
+                ;;
+        esac
     else
-       rm -rf $GROUND_TRUTH_DIR
-    fi
-    if [ ! -d $GROUND_TRUTH_DIR ]; then
-        mkdir -p $GROUND_TRUTH_DIR
-        export GROUND_TRUTH_DIR=$GROUND_TRUTH_DIR
-        echo "GROUND_TRUTH_DIR: $GROUND_TRUTH_DIR"
-        echo "ocr being called with: ocr check scan $SC"
-        ocr check scan $SC
+        echo "No existing ground truth data found. Generating new data..."
+        ocr check scan $START_NUM $END_NUM
         echo "$SC" > ${GROUND_TRUTH_COUNT_FILE}
-    else
-        echo "Found ground truth at $GROUND_TRUTH_DIR"
     fi
     #
     # Now do tesstrain stuff

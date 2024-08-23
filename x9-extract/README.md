@@ -1,40 +1,73 @@
 # X9 Extract
 
-The x9-extract tool extracts information from one or more [X9 files](https://www.frbservices.org/binaries/content/assets/crsocms/financial-services/check/setup/frb-x937-standards-reference.pdf) which can be used by the fin-ocr system to test or train OCR (Optical Character Recognition) of bank checks.
+X9 Extract is a tool for extracting check images and metadata from X9 files, which can be used to prepare data for training or testing Optical Character Recognition (OCR) systems for bank checks, particularly for MICR (Magnetic Ink Character Recognition) line recognition.
 
-### Getting Started
+## Overview
 
-1. [Install golang](https://go.dev/doc/install) if it is not already installed on your system.
+- Extracts check images and metadata from X9 files
+- Generates TIFF images and corresponding JSON files for each check
 
-2. Build the `x9-extract` binary as follows:
+## Getting Started
+
+### Prerequisites
+
+- Go (version 1.21 or later)
+
+### Installation
+
+1. Build the `x9-extract` binary:
 
    ```
    go build
    ```
 
-3. To see the usage message:
+### Usage
 
-   ```
-   $ x9-extract
-   Usage: x9-extract <outputDir> <x9File1> [<x9File2> ...]
-   ```
+```
+x9-extract <outputDir> <x9File1> [<x9File2> ...]
+```
 
-4. Preparing data
+- `<outputDir>`: Directory where extracted files will be saved
+- `<x9File1>`, `<x9File2>`, etc.: One or more X9 files to process
 
-   It is always best to keep your testing and training data separate.
+### Example
 
-   In order to prepare your testing data, put the X9 files that you want to use for testing in your `$HOME/x9-files/test` directory and run the following command:
+Note: Setting the `FRB_COMPATIBILITY_MODE` environment variable to `true` enables Federal Reserve Bank (FRB) compatibility mode. This mode adjusts the processing of X9 files to meet specific FRB requirements. This mode allows certain fields to have default values or prevents errors that would occur in non-FRB contexts, ensuring compatibility with FRB standards. For example, this mode changes the DigitalSignatureMethod field from "0" to "00" when required. See (moov-io/imagecashletter repo)[https://github.com/search?q=repo%3Amoov-io%2Fimagecashletter%20IsFRBCompatibilityModeEnabled&type=code] to dig out the specifics if needed.
 
-   ```
-   FRB_COMPATIBILITY_MODE=true x9-extract $HOME/.fin-ocr/checks $HOME/x9-files/test/*
-   ```
+Prepare testing data:
 
-   This will populate your `$HOME/.fin-ocr/checks` directory with two files per check for testing: a TIFF file and a JSON file containing the necessary fields extracted from your X9 file.
+```bash
+FRB_COMPATIBILITY_MODE=true ./x9-extract $HOME/.fin-ocr/checks $HOME/x9-files/test/*
+```
 
-   In order to prepare your training data, put the X9 files that you want to use for training in your `$HOME/x9-files/train` directory and run the following command
+Prepare training data:
 
-   ```
-   FRB_COMPATIBILITY_MODE=true x9-extract $HOME/.fin-ocr/train/checks $HOME/x9-files/train/*
-   ```
+```bash
+FRB_COMPATIBILITY_MODE=true ./x9-extract $HOME/.fin-ocr/train/checks $HOME/x9-files/train/*
+```
 
-   This will populate your `$HOME/.fin-ocr/train/checks` directory with two files per check as described above.
+## Output
+
+For each check in the input X9 file(s), the tool generates:
+
+1. A TIFF file containing the check image
+2. A JSON file containing metadata extracted from the X9 file
+
+Output files are named using the pattern `check-<num>.tiff` and `check-<num>.json`, where `<num>` is a monotonically increasing number.
+
+### JSON Structure
+
+```json
+{
+  "id": "check-<num>",
+  "fileName": "original_x9_filename",
+  "fileSeqNo": 1,
+  "routingNumber": "123456789",
+  "accountNumber": "1234567",
+  "checkNumber": "1001",
+  "auxiliaryOnUs": "1001",
+  "payorBankRoutingNumber": "12345678",
+  "payorBankCheckDigit": "9",
+  "onUs": "1234567/1001"
+}
+```
