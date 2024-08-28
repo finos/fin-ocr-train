@@ -1,0 +1,151 @@
+#!/bin/bash
+# Copyright (c) 2024 Discover Financial Services
+
+set -e
+
+if command -v gmake >/dev/null 2>&1; then
+    MAKE_CMD="gmake"
+else
+    MAKE_CMD="make"
+fi
+
+export TRAINING_METHOD="${TRAINING_METHOD:=text2image}"  # Default method is text2image, can be set to trdg
+export TRAINING_MODEL_NAME="${TRAINING_MODEL_NAME:=micr_e13b}"
+export OCR_LOG_LEVEL="${OCR_LOG_LEVEL:=info}"
+export PSM="${PSM:=13}"
+
+TRAIN_DIR="${TRAIN_DIR:-$HOME/.fin-ocr/train}"
+TESSTRAIN_DIR="${TESSTRAIN_DIR:-$TRAIN_DIR/tesstrain}"
+RESULTS_DIR="${RESULTS_DIR:-$TRAIN_DIR/results/$(date "+%Y-%m-%d")}"
+LOG_FILE="${LOG_FILE:-$TRAIN_DIR/train.log}"
+
+function usage() {
+   echo "Usage: $0 train <numSamples> [<method>] [<model-name>]"
+   echo "  <numSamples>   : Number of samples to generate for training"
+   echo "  [<method>]     : (Optional) Training method, either 'text2image' (default) or 'trdg'"
+   echo "  [<model-name>] : (Optional) Name of the model to train. Defaults to 'micr_e13b'"
+   exit 1
+}
+
+function fatal() {
+   echo "FATAL: $*"
+   exit 1
+}
+
+function main() {
+   if [ $# -lt 1 ]; then
+      usage
+   fi
+   CMD=$1
+   NUM_SAMPLES=$2
+   METHOD=${3:-$TRAINING_METHOD}
+   MODEL_NAME=${4:-$TRAINING_MODEL_NAME}
+
+   if [ "$CMD" = "train" ]; then
+      train "$NUM_SAMPLES" "$METHOD" "$MODEL_NAME"
+   else
+      usage
+   fi
+}
+
+function train {
+    if [ $# -lt 2 ]; then
+        usage
+    fi
+
+    NUM_SAMPLES=$1
+    METHOD=$2
+    MODEL_NAME=$3
+
+    mkdir -p $TRAIN_DIR
+    cd $TRAIN_DIR
+    if [ ! -d "$TESSTRAIN_DIR" ]; then
+        echo "Cloning tesstrain repository..."
+        git clone https://github.com/tesseract-ocr/tesstrain.git "$TESSTRAIN_DIR"
+    else
+        echo "tesstrain directory found at $TESSTRAIN_DIR"
+    fi
+
+    mkdir -p "$RESULTS_DIR"
+    export TESSDATA_PREFIX="$TRAIN_DIR/tesstrain/usr/share/tessdata"
+    mkdir -p "$TRAIN_DIR/tesstrain/usr/share/tessdata/configs"
+    cat <<EOL > "$TRAIN_DIR/tesstrain/usr/share/tessdata/configs/lstm.train"
+file_type                   .bl
+textord_fast_pitch_test	T
+tessedit_zero_rejection T
+tessedit_minimal_rejection F
+tessedit_write_rep_codes F
+edges_children_fix F
+edges_childarea 0.65
+edges_boxarea 0.9
+tessedit_train_line_recognizer T
+textord_no_rejects T
+tessedit_init_config_only T
+EOL
+
+    if [ "$METHOD" = "trdg" ]; then
+        train_trdg "$NUM_SAMPLES" "$MODEL_NAME"
+    else
+        train_text2image "$NUM_SAMPLES" "$MODEL_NAME"
+    fi
+}
+
+function train_text2image {
+    NUM_SAMPLES=$1
+    MODEL_NAME=$2
+
+    echo "Generating training data with text2image..."
+    ocr training generate "$MODEL_NAME" "$NUM_SAMPLES"  # Replace with actual command to generate data
+
+    cd "$TESSTRAIN_DIR"
+    echo "Starting training with text2image method..."
+    $MAKE_CMD training MODEL_NAME="$MODEL_NAME" PSM="$PSM" EPOCHS=2 TARGET_ERROR_RATE=-1
+
+    saveTrainedData "$MODEL_NAME"
+}
+
+function train_trdg {
+    NUM_SAMPLES=$1
+    MODEL_NAME=$2
+
+    echo "Generating training data with TRDG..."
+    ./train_trdg.sh "$NUM_SAMPLES"  # Assumes train_trdg.sh is correctly configured in tesstrain dir
+
+    cd "$TESSTRAIN_DIR"
+    echo "Starting training with TRDG method..."
+    $MAKE_CMD training MODEL_NAME="$MODEL_NAME" PSM="$PSM" EPOCHS=2 TARGET_ERROR_RATE=-1
+
+    saveTrainedData "$MODEL_NAME"
+}
+
+function saveTrainedData {
+    MODEL_NAME=$1
+    TD_FILE="${MODEL_NAME}.traineddata"
+    TD_PATH="${TESSTRAIN_DIR}/data/${TD_FILE}"
+
+    if [ ! -f "$TD_PATH" ]; then
+        echo "Training failed; trained data file $TD_PATH not found"
+        exit 1
+    fi
+
+    if [ -f "$RESULTS_DIR/$TD_FILE" ]; then
+        read -p "Trained data $TD_FILE already exists in $RESULTS_DIR. Overwrite? (y/n): " yn
+        case $yn in
+            [Yy]* ) ;;
+            [Nn]* )
+                version=1
+                while [ -f "$RESULTS_DIR/${MODEL_NAME}_v${version}.traineddata" ]; do
+                    version=$((version+1))
+                done
+                TD_FILE="${MODEL_NAME}_v${version}.traineddata"
+                ;;
+            * ) echo "Please answer y or n."; exit 1;;
+        esac
+    fi
+
+    cp "$TD_PATH" "$RESULTS_DIR/$TD_FILE"
+    echo "Stored trained data at $RESULTS_DIR/$TD_FILE"
+}
+
+main "$@"
+

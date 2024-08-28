@@ -24,8 +24,6 @@ The disadvantages of this method are:
 
    * `tesseract` version 5 - see [tesseract installation instructions](https://tesseract-ocr.github.io/tessdoc/Installation.html)
 
-   * The `micr.ttf` font as found in this [directory](./fonts/mcr.ttf).
-
 2. Clone https://github.com/tesseract-ocr/tesstrain
 
 3. From within the tesstrain dir, run `gmake tesseract-langdata` to place the language files in the correct location. This only needs to berun the first time.

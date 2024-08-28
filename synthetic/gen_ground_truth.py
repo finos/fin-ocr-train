@@ -32,7 +32,7 @@ for i in range(1,count+1):
 
     subprocess.run([
         'text2image',
-        f'--font=MICR E13B',
+        f'--font=GnuMicr Thin',
         f'--fonts_dir=./fonts',
         f'--text={gtFile}',
         f'--outputbase={output_dir}/{base}',

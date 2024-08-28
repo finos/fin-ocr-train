@@ -70,6 +70,13 @@ function train {
     COUNT=$2
     command -v ocr >/dev/null 2>&1 || { echo >&2 "The 'ocr' command must be installed. See https://github.com/discoverfinancial/fin-ocr-cli?tab=readme-ov-file#installation-steps"; exit 1; }
 
+    if [ ! -d "$TESSTRAIN_DIR" ]; then
+        echo "Cloning tesstrain repository..."
+        git clone https://github.com/tesseract-ocr/tesstrain.git "$TESSTRAIN_DIR"
+    else
+        echo "tesstrain directory found at $TESSTRAIN_DIR"
+    fi
+
     mkdir -p $TRAIN_DIR
     cd $TRAIN_DIR
     runTrain "$START:$COUNT" 2>&1 | tee ${LOG_FILE}
@@ -78,9 +85,7 @@ function train {
       echo "The runTrain command failed, see $LOG_FILE for details."
       exit 2
     fi
-    #
     # save the trained data by date
-    #
     saveTrainedData
 }
 
