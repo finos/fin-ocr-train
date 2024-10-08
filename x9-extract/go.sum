@@ -4,6 +4,8 @@ github.com/gdamore/encoding v1.0.1 h1:YzKZckdBL6jVt2Gc+5p82qhrGiqMdG/eNs6Wy0u3Uh
 github.com/gdamore/encoding v1.0.1/go.mod h1:0Z0cMFinngz9kS1QfMjCP8TY7em3bZYeeklsSDPivEo=
 github.com/moov-io/imagecashletter v0.11.0 h1:OdJWKTqPov3hEzvOag2mYS3iqPBWj/QTtAXtR2hNRz4=
 github.com/moov-io/imagecashletter v0.11.0/go.mod h1:AiKBzq91y8iAT9QnJJ/k7l7uyX8JZOo2An7mz4MgusQ=
+github.com/moov-io/imagecashletter v0.11.1-0.20240828184159-58a88cec50ee h1:dCmErVeGWvgullViJ3ncyqF8flLpJMw3GD/WCxqU55w=
+github.com/moov-io/imagecashletter v0.11.1-0.20240828184159-58a88cec50ee/go.mod h1:4pKQH7m1Sq/SjEngFx4ncaqVndHuByqaXaYjpm5aD60=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsTg=
