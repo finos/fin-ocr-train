@@ -1,3 +1,4 @@
+[![DFS - Incubating](./_images/discover-incubating.svg)](https://technology.discover.com/technologies/open_source) [![Contributors-Invited](https://img.shields.io/badge/Contributors-Wanted-blue)](./CONTRIBUTE.md)
 # MICR Line Training for Tesseract OCR
 
 This repository contains methods and tools for training Tesseract OCR to recognize MICR (Magnetic Ink Character Recognition) lines on bank checks. While the focus is on MICR, the general approach can be applied to other specialized fonts and media.
