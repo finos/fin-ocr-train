@@ -36,6 +36,8 @@ This will initiate the training process using 1000 generated micr line images.
 
 2 Generates Synthetic Training Data: The script uses the OCR CLI tool to generate synthetic MICR line data, which is then used for training.
 
+3. Starts the Training Process: The script invokes the tesstrain makefile to train the model using the generated data. The results, including the trained model file (.traineddata), are saved to a results directory.
+
 ## Training Results
 
 After training completes:
@@ -44,6 +46,4 @@ After training completes:
    - `micr_e13b.traineddata`: The trained Tesseract data file (model name)
 
 2. You can use the resulting `micr_e13b.traineddata` file with the [fin-ocr CLI](https://github.com/discoverfinancial/fin-ocr-cli) or [fin-ocr REST service](https://github.com/discoverfinancial/fin-ocr-rest) for MICR line recognition.
-
-3. Starts the Training Process: The script invokes the tesstrain makefile to train the model using the generated data. The results, including the trained model file (.traineddata), are saved to a results directory.
 
