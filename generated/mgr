@@ -79,8 +79,8 @@ function train {
     ocr training generate "$MODEL_NAME" "$NUM_SAMPLES"
 
     mkdir -p tesstrain/usr/share/tessdata
-    ln -s "$TRAIN_DIR/micr_e13b.traineddata" tesstrain/usr/share/tessdata/micr_e13b.traineddata -f
-    ln -s "$TRAIN_DIR/eng.traineddata" tesstrain/usr/share/tessdata/eng.traineddata -f
+    ln -sf "$TRAIN_DIR/micr_e13b.traineddata" tesstrain/usr/share/tessdata/micr_e13b.traineddata
+    ln -sf "$TRAIN_DIR/eng.traineddata" tesstrain/usr/share/tessdata/eng.traineddata
     export TESSDATA_PREFIX="$TRAIN_DIR/tesstrain/usr/share/tessdata"
     mkdir -p "$TRAIN_DIR/tesstrain/usr/share/tessdata/configs"
     cat <<EOL > "$TRAIN_DIR/tesstrain/usr/share/tessdata/configs/lstm.train"
