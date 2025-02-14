@@ -123,7 +123,7 @@ function runTrain {
         case $overwrite in
             [Yy]* )
                 echo "Generating new ground truth data..."
-                rm -rf $GROUND_TRUTH_DIR/*
+                find $GROUND_TRUTH_DIR -mindepth 1 -delete
                 ocr check scan $START_NUM $END_NUM
                 echo "$SC" > ${GROUND_TRUTH_COUNT_FILE}
                 ;;
