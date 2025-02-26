@@ -20,9 +20,16 @@ Located in the `real/` directory, this method uses actual check images for train
 
 [Learn more about real check training](./real/README.md)
 
-### 2. Synthetic Data Training
+### 2. Generated Data Training
 
-Found in the `synthetic/` directory, this method generates artificial MICR lines for training. It has shown lower accuracy compared to using real checks in our tests.
+Found in the `generated/` directory, this method generates artificial MICR lines for training. It is a great introduction into training data without real check images.
+
+[Learn more about generated data training](./generated/README.md)
+
+
+### 3. Synthetic Data Training
+
+Found in the `synthetic/` directory, this method also generates artificial MICR lines for training. The approaches in this section are more advanced, including how to intentionally obscure the generated MICR line to simulate the types of issues that might arise when processing checks in the real world.  It has shown lower accuracy compared to using real checks in our tests.
 
 [Learn more about synthetic data training](./synthetic/README.md)
 
