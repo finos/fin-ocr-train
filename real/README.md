@@ -4,7 +4,10 @@ This guide explains how to train Tesseract OCR for recognizing MICR (Magnetic In
 
 ## Prerequisites
 
+* **Node.js** and npm (for running the OCR CLI tool)
+* **gmake** or **make** v4.2 or newer
 * **Python 3.x** along with the `pillow` library for image processing.
+* **wget**
 * **Tesseract 5.x** (see [Tesseract installation instructions](https://tesseract-ocr.github.io/tessdoc/Installation.html))
 * **OCR CLI tool** (follow installation instructions from the [fin-ocr-cli repository](https://github.com/discoverfinancial/fin-ocr-cli))
 
