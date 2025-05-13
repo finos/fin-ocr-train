@@ -9,7 +9,7 @@ This guide explains how to train Tesseract OCR for recognizing MICR (Magnetic In
 * **Python 3.x** along with the `pillow` library for image processing.
 * **wget**
 * **Tesseract 5.x** (see [Tesseract installation instructions](https://tesseract-ocr.github.io/tessdoc/Installation.html))
-* **OCR CLI tool** (follow installation instructions from the [fin-ocr-cli repository](https://github.com/discoverfinancial/fin-ocr-cli))
+* **OCR CLI tool** (follow installation instructions from the [fin-ocr-cli repository](https://github.com/finos/fin-ocr-cli))
 
 ## Preparing Training Data
 
@@ -135,7 +135,7 @@ After training completes:
    - `micr_e13b.traineddata`: The trained Tesseract data file
    - `$HOME/.fin-ocr/train/train.log`: Detailed logs 
 
-2. You can use the resulting `micr_e13b.traineddata` file with the [fin-ocr CLI](https://github.com/discoverfinancial/fin-ocr-cli) or [fin-ocr REST service](https://github.com/discoverfinancial/fin-ocr-rest) for MICR line recognition.
+2. You can use the resulting `micr_e13b.traineddata` file with the [fin-ocr CLI](https://github.com/finos/fin-ocr-cli) or [fin-ocr REST service](https://github.com/finos/fin-ocr-rest) for MICR line recognition.
 
 ## Troubleshooting
 
