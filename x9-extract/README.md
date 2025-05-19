@@ -71,3 +71,26 @@ Output files are named using the pattern `check-<num>.tiff` and `check-<num>.jso
   "onUs": "1234567/1001"
 }
 ```
+
+## Vulnerability Report
+
+To generate a report containing any vulnerabilities in any dependency please use govulncheck.
+
+```bash
+go install golang.org/x/vuln/cmd/govulncheck@latest
+```
+
+```bash
+cd x9-extract
+$HOME/go/bin/govulncheck ./...
+```
+
+## License Report
+
+```bash
+go install github.com/google/go-licenses@latest
+```
+
+```bash
+$HOME/go/bin/go-licenses report github.com/finos/fin-ocr-train/... 
+```
