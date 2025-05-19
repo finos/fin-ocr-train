@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2024 Discover Financial Services
+# Copyright (c) 2024 Capital One
 
 if [ $# -ne 1 ]; then
    echo "Usage: train <numImages>"
