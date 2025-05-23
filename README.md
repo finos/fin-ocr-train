@@ -1,4 +1,4 @@
-[![DFS - Incubating](./_images/discover-incubating.svg)](https://technology.discover.com/technologies/open_source) [![Contributors-Invited](https://img.shields.io/badge/Contributors-Wanted-blue)](./CONTRIBUTE.md)
+[![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating) [![Contributors-Invited](https://img.shields.io/badge/Contributors-Wanted-blue)](./CONTRIBUTE.md)
 # MICR Line Training for Tesseract OCR
 
 This repository contains methods and tools for training Tesseract OCR to recognize MICR (Magnetic Ink Character Recognition) lines on bank checks. While the focus is on MICR, the general approach can be applied to other specialized fonts and media.
@@ -41,3 +41,20 @@ The `x9-extract/` directory contains a tool for extracting check details from X9
 
 [Learn more about X9 Extract](./x9-extract/README.md)
 
+## Roadmap
+
+1. Improve usability and reliability of Synthetic training to better simulate real life scenarios in order to better train the model
+
+## Contributing
+
+This document provides guidance for how YOU can collaborate with our project community to improve this technology.
+
+[FIN-OCR Contribution](https://github.com/finos/fin-ocr/blob/main/CONTRIBUTE.md)
+
+## License
+
+Copyright 2024 Capital One
+
+Distributed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+SPDX-License-Identifier: [Apache-2.0](https://spdx.org/licenses/Apache-2.0)
